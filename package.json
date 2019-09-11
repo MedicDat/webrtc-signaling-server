@@ -1,0 +1,36 @@
+{
+  "name": "webrtc-signaling-server",
+  "version": "1.0.0",
+  "description": "simple signaling server",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm-run-all --parallel run-server",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "run-server": "node server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MedicDat/webrtc-signaling-server.git"
+  },
+  "keywords": [
+    "flutter",
+    "webrtc",
+    "signaling"
+  ],
+  "author": "duanweiwei1982@gmail.com",
+  "contributors": { "name": "liquidiert" }
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MedicDat/webrtc-signaling-server/issues"
+  },
+  "homepage": "https://github.com/MedicDat/webrtc-signaling-server/#readme",
+  "dependencies": {
+    "express": "^4.11.2",
+    "ws": "^5.2.1",
+    "moment": "^2.24.0",
+    "loglevel": "^1.6.4"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.3",
+  }
+}
