@@ -258,7 +258,7 @@ export default class CallHandler {
                     {
                         var msg = {
                             type: "answer",
-                            reject = false,
+                            reject: false,
                             data: {
                                 from: client_self.id,
                                 to: message.to,
