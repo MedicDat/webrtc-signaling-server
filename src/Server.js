@@ -62,6 +62,9 @@ export default class CallHandler {
 
         this.wss = new ws.Server({ server: this.ssl_server });
         this.wss.on('connection', this.onConnection);
+
+        //register object keys -> smaller buffer size
+        register('type', 'id', 'name', 'user_agent', 'session_id', 'from', 'to', 'media', 'description', 'candidate');
     }
 
     updatePeers = () => {
