@@ -64,7 +64,7 @@ export default class CallHandler {
         this.wss.on('connection', this.onConnection);
 
         //register object keys -> smaller buffer size
-        register('type', 'id', 'name', 'user_agent', 'session_id', 'from', 'to', 'media', 'description', 'candidate');
+        register('type', 'reject', 'id', 'name', 'user_agent', 'session_id', 'from', 'to', 'media', 'description', 'candidate');
     }
 
     updatePeers = () => {
@@ -258,12 +258,16 @@ export default class CallHandler {
                     {
                         var msg = {
                             type: "answer",
+                            reject = false,
                             data: {
                                 from: client_self.id,
                                 to: message.to,
                                 description: message.description,
                             }
                         };
+                        if (!message.accept) {
+                            msg.reject = true;
+                        }
 
                         this.clients.forEach(function (client) {
                             if (client.id === "" + message.to && client.session_id === message.session_id) {
