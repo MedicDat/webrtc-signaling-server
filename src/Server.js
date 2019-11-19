@@ -5,14 +5,16 @@ import ws from 'ws';
 import http from 'http';
 import https from 'https';
 import path from 'path';
+const MessagePack = require('what-the-pack');
+const {encode, decode, register} = MessagePack.initialize(2**22);
 var moment = require('moment');
 var log = require('loglevel');
-log.setLevel(log.levels.ERROR) //change this to DEBUG for verbose
+log.setLevel(log.levels.DEBUG) //change this to DEBUG for verbose
 
 app.use(express.static(path.join(process.cwd(),"dist")));
 
 var toHHMMSS = function (secs) {
-    var sec_num = parseInt(secs, 10); // don't forget the second param
+    var sec_num = parseInt(secs, 10);
     var hours   = Math.floor(sec_num / 3600);
     var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
     var seconds = sec_num - (hours * 3600) - (minutes * 60);
@@ -93,7 +95,7 @@ export default class CallHandler {
 
         let _send = this._send;
         this.clients.forEach(function (client) {
-            _send(client, JSON.stringify(msg));
+            _send(client, encode(msg));
         });
     }
     
@@ -138,7 +140,7 @@ export default class CallHandler {
         let _send = this._send;
         this.clients.forEach(function (client) {
             if (client != client_self)
-            _send(client, JSON.stringify(msg));
+            _send(client, encode(msg));
         });
 
         this.updatePeers();
@@ -158,8 +160,8 @@ export default class CallHandler {
 
         client_self.on("message", message => {
             try {
-                message = JSON.parse(message);
-                log.debug("message.type:: " + message.type + ", \nbody: " + JSON.stringify(message));
+                message = decode(message);
+                log.debug("message.type:: " + message.type + ", \nbody: " + encode(message));
             } catch (e) {
                 log.debug(e.message);
             }
@@ -189,7 +191,7 @@ export default class CallHandler {
                                     error: "Invalid session " + message.session_id,
                                 },
                             };
-                            _send(client_self, JSON.stringify(msg));
+                            _send(client_self, encode(msg));
                             return;
                         }
 
@@ -205,7 +207,7 @@ export default class CallHandler {
                                             to: (client.id == session.from ? session.to : session.from),
                                         },
                                     };
-                                    _send(client, JSON.stringify(msg));
+                                    _send(client, encode(msg));
                                 } catch (e) {
                                     log.debug("onUserJoin:" + e.message);
                                 }
@@ -234,7 +236,7 @@ export default class CallHandler {
                                     description: message.description,
                                 }
                             }
-                            _send(peer, JSON.stringify(msg));
+                            _send(peer, encode(msg));
 
                             peer.session_id = message.session_id;
                             client_self.session_id = message.session_id;
@@ -263,7 +265,7 @@ export default class CallHandler {
                         this.clients.forEach(function (client) {
                             if (client.id === "" + message.to && client.session_id === message.session_id) {
                                 try {
-                                    _send(client, JSON.stringify(msg));
+                                    _send(client, encode(msg));
                                 } catch (e) {
                                     log.debug("onUserJoin:" + e.message);
                                 }
@@ -285,7 +287,7 @@ export default class CallHandler {
                         this.clients.forEach(function (client) {
                             if (client.id === "" + message.to && client.session_id === message.session_id) {
                                 try {
-                                    _send(client, JSON.stringify(msg));
+                                    _send(client, encode(msg));
                                 } catch (e) {
                                     log.debug("onUserJoin:" + e.message);
                                 }
@@ -294,7 +296,7 @@ export default class CallHandler {
                     }
                     break;
                 case 'keepalive':
-                    _send(client_self, JSON.stringify({type:'keepalive', data:{}}));
+                    _send(client_self, encode({type:'keepalive', data:{}}));
                     break;
                 default:
                     log.debug("Unhandled message: " + message.type);
@@ -321,6 +323,7 @@ app.get('/debug', function(req, res) {
         "Uptime": callHandler.getUptime(),
         "Peers": callHandler.getPeers()
     }
+    //JSON is fine cause debug is only used internally
     res.send(JSON.stringify(response));
 });
 
