@@ -258,16 +258,12 @@ export default class CallHandler {
                     {
                         var msg = {
                             type: "answer",
-                            reject: false,
                             data: {
                                 from: client_self.id,
                                 to: message.to,
                                 description: message.description,
                             }
                         };
-                        if (!message.accept) {
-                            msg.reject = true;
-                        }
 
                         this.clients.forEach(function (client) {
                             if (client.id === "" + message.to && client.session_id === message.session_id) {
