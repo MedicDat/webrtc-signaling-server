@@ -5,11 +5,12 @@ import ws from 'ws';
 import http from 'http';
 import https from 'https';
 import path from 'path';
+const zlib = require("zlib");
 const MessagePack = require('what-the-pack');
 const {encode, decode, register} = MessagePack.initialize(2**22);
 var moment = require('moment');
 var log = require('loglevel');
-log.setLevel(log.levels.DEBUG) //change this to DEBUG for verbose
+log.setLevel(log.levels.ERROR) //change this to DEBUG for verbose
 
 app.use(express.static(path.join(process.cwd(),"dist")));
 
@@ -63,8 +64,6 @@ export default class CallHandler {
         this.wss = new ws.Server({ server: this.ssl_server });
         this.wss.on('connection', this.onConnection);
 
-        //register object keys -> smaller buffer size
-        register('type', 'reject', 'id', 'name', 'user_agent', 'session_id', 'from', 'to', 'media', 'description', 'candidate');
     }
 
     updatePeers = () => {
@@ -164,7 +163,9 @@ export default class CallHandler {
         client_self.on("message", message => {
             try {
                 message = decode(message);
-                log.debug("message.type:: " + message.type + ", \nbody: " + encode(message));
+                log.debug("message.type:: " + message.type + ", \nbodyBytes: " + encode(message) + "\n");
+                log.debug(message.name + "\n");
+                log.debug(message);
             } catch (e) {
                 log.debug(e.message);
             }
@@ -208,6 +209,7 @@ export default class CallHandler {
                                             session_id: message.session_id,
                                             from: message.from,
                                             to: (client.id == session.from ? session.to : session.from),
+                                            callBack: message.callBack,
                                         },
                                     };
                                     _send(client, encode(msg));
@@ -235,6 +237,7 @@ export default class CallHandler {
                                     to: peer.id,
                                     from: client_self.id,
                                     media: message.media,
+                                    fromUser: message.fromUser,
                                     session_id: message.session_id,
                                     description: message.description,
                                 }
@@ -308,11 +311,14 @@ export default class CallHandler {
     }
 
     _send = (client, message) => {
-        try {
-            client.send(message);
-        }catch(e){
-            log.debug("Send failure !: " + e);
-        }
+        zlib.deflate(message, (err, buffer) => {
+            if (!err) {
+                client.send(buffer.toString("base64"));
+            } else {
+                log.debug("Send failure !: " + err);
+            }
+          }
+        );
     }
 }
 
