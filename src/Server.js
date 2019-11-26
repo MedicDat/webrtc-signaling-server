@@ -162,7 +162,7 @@ export default class CallHandler {
 
         client_self.on("message", message => {
             try {
-                message = decode(message);
+                message = decode(zlib.unzip(message));
                 log.debug("message.type:: " + message.type + ", \nbodyBytes: " + encode(message) + "\n");
                 log.debug(message.name + "\n");
                 log.debug(message);
