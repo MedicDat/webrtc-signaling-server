@@ -10,7 +10,7 @@ const MessagePack = require('what-the-pack');
 const {encode, decode} = MessagePack.initialize(2**22);
 var moment = require('moment');
 var log = require('loglevel');
-log.setLevel(log.levels.ERROR) //change this to DEBUG for verbose
+log.setLevel(log.levels.DEBUG) //change this to DEBUG for verbose
 
 app.use(express.static(path.join(process.cwd(),"dist")));
 
@@ -68,7 +68,7 @@ export default class CallHandler {
 
     updatePeers = () => {
         var peers = [];
-        
+        log.debug("updating peers...");
         this.peer_no = 0;
 
         this.clients.forEach(function (client) {
@@ -97,7 +97,7 @@ export default class CallHandler {
 
         let _send = this._send;
         this.clients.forEach(function (client) {
-            _send(client, encode(msg));
+            _send(client, msg);
         });
     }
     
@@ -142,7 +142,7 @@ export default class CallHandler {
         let _send = this._send;
         this.clients.forEach(function (client) {
             if (client != client_self)
-            _send(client, encode(msg));
+            _send(client, msg);
         });
 
         this.updatePeers();
@@ -161,166 +161,162 @@ export default class CallHandler {
         });
 
         client_self.on("message", message => {
-            try {
-                zlib.unzip(message, (err, buffer) => {
-                        if (!err) {
-                            message = buffer.toString();
-                            log.debug("message.type:: " + message.type + ", \nbodyBytes: " + encode(message) + "\n");
-                            log.debug(message.name + "\n");
-                            log.debug(message);
-                        } else {
-                            log.error(err);
-                        }
-                    }
-                );
-            } catch (e) {
-                log.debug(e.message);
-            }
+            zlib.unzip(message, (err, buffer) => {
+                    if (!err) {
+                        message = decode(buffer);
+                        log.debug("message.type:: " + message.type + ", \nbodyBytes: " + encode(message) + "\n");
+                        log.debug(message.name + "\n");
+                        log.debug(message);
 
-            switch (message.type) {
-                case 'new':
-                    {
-                        client_self.id = "" + message.id;
-                        client_self.name = message.name;
-                        client_self.user_agent = message.user_agent;
-                        this.updatePeers();
-                    }
-                    break;
-                case 'bye':
-                    {
-                        var session = null;
-                        this.sessions.forEach((sess) => {
-                            if (sess.id == message.session_id) {
-                                session = sess;
-                            }
-                        });
-
-                        if (!session) {
-                            var msg = {
-                                type: "error",
-                                data: {
-                                    error: "Invalid session " + message.session_id,
-                                },
-                            };
-                            _send(client_self, encode(msg));
-                            return;
-                        }
-
-                        this.clients.forEach((client) => {
-                            if (client.session_id === message.session_id) {
-                                try {
-
+                        switch (message.type) {
+                            case 'new':
+                                {
+                                    client_self.id = "" + message.id;
+                                    client_self.name = message.name;
+                                    client_self.user_agent = message.user_agent;
+                                    this.updatePeers();
+                                }
+                                break;
+                            case 'bye':
+                                {
+                                    var session = null;
+                                    this.sessions.forEach((sess) => {
+                                        if (sess.id == message.session_id) {
+                                            session = sess;
+                                        }
+                                    });
+            
+                                    if (!session) {
+                                        var msg = {
+                                            type: "error",
+                                            data: {
+                                                error: "Invalid session " + message.session_id,
+                                            },
+                                        };
+                                        _send(client_self, msg);
+                                        return;
+                                    }
+            
+                                    this.clients.forEach((client) => {
+                                        if (client.session_id === message.session_id) {
+                                            try {
+            
+                                                var msg = {
+                                                    type: "bye",
+                                                    data: {
+                                                        session_id: message.session_id,
+                                                        from: message.from,
+                                                        to: (client.id == session.from ? session.to : session.from),
+                                                        callBack: message.callBack,
+                                                    },
+                                                };
+                                                _send(client, msg);
+                                            } catch (e) {
+                                                log.debug("onUserJoin:" + e.message);
+                                            }
+                                        }
+                                    });
+                                }
+                                break;
+                            case "offer":
+                                {
+                                    var peer = null;
+                                    this.clients.forEach(function (client) {
+                                        if (client.hasOwnProperty('id') && client.id === "" + message.to) {
+                                            peer = client;
+                                        }
+                                    });
+            
+                                    if (peer != null) {
+            
+                                        msg = {
+                                            type: "offer",
+                                            data: {
+                                                to: peer.id,
+                                                from: client_self.id,
+                                                media: message.media,
+                                                fromUser: message.fromUser,
+                                                session_id: message.session_id,
+                                                description: message.description,
+                                            }
+                                        }
+                                        _send(peer, msg);
+            
+                                        peer.session_id = message.session_id;
+                                        client_self.session_id = message.session_id;
+            
+                                        let session = {
+                                            id: message.session_id,
+                                            from: client_self.id,
+                                            to: peer.id,
+                                        };
+                                        this.sessions.push(session);
+                                    }
+            
+                                    break;
+                                }
+                            case 'answer':
+                                {
                                     var msg = {
-                                        type: "bye",
+                                        type: "answer",
                                         data: {
-                                            session_id: message.session_id,
-                                            from: message.from,
-                                            to: (client.id == session.from ? session.to : session.from),
-                                            callBack: message.callBack,
-                                        },
+                                            from: client_self.id,
+                                            to: message.to,
+                                            description: message.description,
+                                        }
                                     };
-                                    _send(client, encode(msg));
-                                } catch (e) {
-                                    log.debug("onUserJoin:" + e.message);
+            
+                                    this.clients.forEach(function (client) {
+                                        if (client.id === "" + message.to && client.session_id === message.session_id) {
+                                            try {
+                                                _send(client, msg);
+                                            } catch (e) {
+                                                log.debug("onUserJoin:" + e.message);
+                                            }
+                                        }
+                                    });
                                 }
-                            }
-                        });
-                    }
-                    break;
-                case "offer":
-                    {
-                        var peer = null;
-                        this.clients.forEach(function (client) {
-                            if (client.hasOwnProperty('id') && client.id === "" + message.to) {
-                                peer = client;
-                            }
-                        });
-
-                        if (peer != null) {
-
-                            msg = {
-                                type: "offer",
-                                data: {
-                                    to: peer.id,
-                                    from: client_self.id,
-                                    media: message.media,
-                                    fromUser: message.fromUser,
-                                    session_id: message.session_id,
-                                    description: message.description,
+                                break;
+                            case 'candidate':
+                                {
+                                    var msg = {
+                                        type: "candidate",
+                                        data: {
+                                            from: client_self.id,
+                                            to: message.to,
+                                            candidate: message.candidate,
+                                        }
+                                    };
+                                    
+                                    this.clients.forEach(function (client) {
+                                        if (client.id === "" + message.to && client.session_id === message.session_id) {
+                                            try {
+                                                _send(client, msg);
+                                            } catch (e) {
+                                                log.debug("onUserJoin:" + e.message);
+                                            }
+                                        }
+                                    });
                                 }
-                            }
-                            _send(peer, encode(msg));
-
-                            peer.session_id = message.session_id;
-                            client_self.session_id = message.session_id;
-
-                            let session = {
-                                id: message.session_id,
-                                from: client_self.id,
-                                to: peer.id,
-                            };
-                            this.sessions.push(session);
+                                break;
+                            case 'keepalive':
+                                _send(client_self, {type:'keepalive', data:{}});
+                                break;
+                            default:
+                                log.debug("Unhandled message: " + message.type);
                         }
-
-                        break;
+                    } else {
+                        log.error(err);
                     }
-                case 'answer':
-                    {
-                        var msg = {
-                            type: "answer",
-                            data: {
-                                from: client_self.id,
-                                to: message.to,
-                                description: message.description,
-                            }
-                        };
-
-                        this.clients.forEach(function (client) {
-                            if (client.id === "" + message.to && client.session_id === message.session_id) {
-                                try {
-                                    _send(client, encode(msg));
-                                } catch (e) {
-                                    log.debug("onUserJoin:" + e.message);
-                                }
-                            }
-                        });
-                    }
-                    break;
-                case 'candidate':
-                    {
-                        var msg = {
-                            type: "candidate",
-                            data: {
-                                from: client_self.id,
-                                to: message.to,
-                                candidate: message.candidate,
-                            }
-                        };
-                        
-                        this.clients.forEach(function (client) {
-                            if (client.id === "" + message.to && client.session_id === message.session_id) {
-                                try {
-                                    _send(client, encode(msg));
-                                } catch (e) {
-                                    log.debug("onUserJoin:" + e.message);
-                                }
-                            }
-                        });
-                    }
-                    break;
-                case 'keepalive':
-                    _send(client_self, encode({type:'keepalive', data:{}}));
-                    break;
-                default:
-                    log.debug("Unhandled message: " + message.type);
-            }
+                }
+            );
         });
     }
 
     _send = (client, message) => {
-        zlib.deflate(message, zlib.Z_BEST_COMPRESSION, (err, buffer) => {
+        zlib.deflate(encode(message), zlib.Z_BEST_COMPRESSION, (err, buffer) => {
             if (!err) {
-                client.send(buffer.toString("base64"));
+                client.send(buffer);
             } else {
                 log.debug("Send failure !: " + err);
             }
