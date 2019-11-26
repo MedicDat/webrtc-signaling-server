@@ -7,7 +7,7 @@ import https from 'https';
 import path from 'path';
 const zlib = require("zlib");
 const MessagePack = require('what-the-pack');
-const {encode, decode, register} = MessagePack.initialize(2**22);
+const {encode, decode} = MessagePack.initialize(2**22);
 var moment = require('moment');
 var log = require('loglevel');
 log.setLevel(log.levels.ERROR) //change this to DEBUG for verbose
@@ -311,7 +311,7 @@ export default class CallHandler {
     }
 
     _send = (client, message) => {
-        zlib.deflate(message, (err, buffer) => {
+        zlib.deflate(message, zlib.Z_BEST_COMPRESSION, (err, buffer) => {
             if (!err) {
                 client.send(buffer.toString("base64"));
             } else {
