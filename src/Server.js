@@ -79,8 +79,8 @@ export default class CallHandler {
             if (client.hasOwnProperty('name')) {
                 peer.name = client.name;
             }
-            if (client.hasOwnProperty('user_agent')) {
-                peer.user_agent = client.user_agent;
+            if (client.hasOwnProperty('in_call')) {
+                peer.in_call = client.in_call;
             }
             if (client.hasOwnProperty('session_id')) {
                 peer.session_id = client.session_id;
@@ -98,6 +98,42 @@ export default class CallHandler {
         let _send = this._send;
         this.clients.forEach(function (client) {
             _send(client, msg);
+        });
+    }
+
+    updatePeersWithInCallPeers = (session_id) => {
+        this.clients.forEach(function (client) {
+            // only update clients in call
+            if (client.session_id == session_id) {
+                var peer = {};
+                if (client.hasOwnProperty('id')) {
+                    peer.id = client.id;
+                }
+                if (client.hasOwnProperty('name')) {
+                    peer.name = client.name;
+                }
+                if (client.hasOwnProperty('in_call')) {
+                    peer.in_call = client.in_call;
+                }
+                if (client.hasOwnProperty('session_id')) {
+                    peer.session_id = client.session_id;
+                }
+                peers.push(peer);
+            }
+        });
+
+        // we can recycle the channel cause frontend only updates the two in call :+1:
+        var msg = {
+            type: "peers",
+            data: peers,
+        };
+
+        let _send = this._send;
+        this.clients.forEach(function (client) {
+            // only send to clients that are not having a call
+            if (client.session_id != session_id) {
+                _send(client, msg);
+            }
         });
     }
     
@@ -173,7 +209,7 @@ export default class CallHandler {
                                 {
                                     client_self.id = "" + message.id;
                                     client_self.name = message.name;
-                                    client_self.user_agent = message.user_agent;
+                                    client_self.in_call = message.in_call;
                                     this.updatePeers();
                                 }
                                 break;
@@ -275,6 +311,9 @@ export default class CallHandler {
                                             }
                                         }
                                     });
+
+                                    // getting answer from client means he accepted call!
+                                    this.updatePeersWithInCallPeers(message.session_id);
                                 }
                                 break;
                             case 'candidate':
