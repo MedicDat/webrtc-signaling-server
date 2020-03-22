@@ -1,16 +1,14 @@
 import express from 'express';
 var app = express();
-import fs from 'fs';
 import ws from 'ws';
 import http from 'http';
-import https from 'https';
 import path from 'path';
 const zlib = require("zlib");
 const MessagePack = require('what-the-pack');
 const {encode, decode} = MessagePack.initialize(2**22);
 var moment = require('moment');
 var log = require('loglevel');
-log.setLevel(log.levels.DEBUG) //change this to DEBUG for verbose
+log.setLevel(log.levels.ERROR) //change this to DEBUG for verbose
 
 app.use(express.static(path.join(process.cwd(),"dist")));
 
@@ -42,22 +40,8 @@ export default class CallHandler {
 
     init() {
 
-        var ws_server_port = (process.env.PORT || 4442);
-        this.server = http.createServer(app).listen(ws_server_port, () => {
-            log.debug("Start WS Server: bind => ws://0.0.0.0:"+ws_server_port);
-        });
-
-        this.ws = new ws.Server({ server: this.server });
-        this.ws.on('connection', this.onConnection);
-
-
-        var options = {
-            key: fs.readFileSync('certs/key.pem'),
-            cert: fs.readFileSync('certs/cert.pem')
-        };
-
-        var wss_server_port = (process.env.PORT + 1 || 4443);
-        this.ssl_server = https.createServer(options, app).listen(wss_server_port, () => {
+        let wss_server_port = (process.env.PORT + 1 || 4443);
+        this.ssl_server = http.createServer(app).listen(wss_server_port, "localhost", () => {
             log.debug("Start WSS Server: bind => wss://0.0.0.0:"+wss_server_port);
         });
 
@@ -100,12 +84,15 @@ export default class CallHandler {
             _send(client, msg);
         });
     }
-
+    
     updatePeersWithInCallPeers = (session_id) => {
+        let peers = [];
+        log.debug("updating peer call state")
+
         this.clients.forEach(function (client) {
             // only update clients in call
             if (client.session_id == session_id) {
-                var peer = {};
+                let peer = {};
                 if (client.hasOwnProperty('id')) {
                     peer.id = client.id;
                 }
@@ -123,7 +110,7 @@ export default class CallHandler {
         });
 
         // we can recycle the channel cause frontend only updates the two in call :+1:
-        var msg = {
+        let msg = {
             type: "peers",
             data: peers,
         };
@@ -136,7 +123,25 @@ export default class CallHandler {
             }
         });
     }
-    
+
+    updateSetEntriesCallStatus = (status, ids) => {
+        let client1, client2;
+        this.clients.forEach(function (client) {
+            if (client.id == ids[0]) {
+                client1 = client;
+            } else if (client.id == ids[1]) {
+                client2 = client;
+            }
+        });
+        this.clients.delete(client1);
+        this.clients.delete(client2);
+
+        client1.in_call = status;
+        client2.in_call = status;
+
+        this.clients.add(client1).add(client2);
+    }
+
     getPeerNo = () => {
         return this.peer_no;
     }
@@ -200,9 +205,9 @@ export default class CallHandler {
             zlib.unzip(message, (err, buffer) => {
                     if (!err) {
                         message = decode(buffer);
-                        log.debug("message.type:: " + message.type + ", \nbodyBytes: " + encode(message) + "\n");
-                        log.debug(message.name + "\n");
-                        log.debug(message);
+                        // log.debug("message.type:: " + message.type + ", \nbodyBytes: " + encode(message) + "\n");
+                        // log.debug(message.name + "\n");
+                        log.debug(message.toString() + "\n");
 
                         switch (message.type) {
                             case 'new':
@@ -211,6 +216,27 @@ export default class CallHandler {
                                     client_self.name = message.name;
                                     client_self.in_call = message.in_call;
                                     this.updatePeers();
+                                }
+                                break;
+                            case 'push':
+                                {
+                                    let receiver = null;
+                                    this.clients.forEach(client => {
+                                        if (client.hasOwnProperty('id') && client.id === "" + message.to) {
+                                            receiver = client;
+                                        }
+                                    });
+                                    log.debug(receiver + "\n");
+                                    if (receiver != null) {
+                                        let msg = {
+                                            type: "push",
+                                            data: {
+                                                to: receiver.id,
+                                                fromUser: message.from_user,
+                                            }
+                                        }
+                                        _send(receiver, msg);
+                                    }
                                 }
                                 break;
                             case 'bye':
@@ -233,6 +259,8 @@ export default class CallHandler {
                                         return;
                                     }
             
+                                    this.updateSetEntriesCallStatus(false, [session.from, session.to]);
+
                                     this.clients.forEach((client) => {
                                         if (client.session_id === message.session_id) {
                                             try {
@@ -252,6 +280,8 @@ export default class CallHandler {
                                             }
                                         }
                                     });
+
+                                    this.updatePeersWithInCallPeers(session.id);
                                 }
                                 break;
                             case "offer":
@@ -288,9 +318,8 @@ export default class CallHandler {
                                         };
                                         this.sessions.push(session);
                                     }
-            
-                                    break;
                                 }
+                                break;
                             case 'answer':
                                 {
                                     var msg = {
@@ -311,6 +340,8 @@ export default class CallHandler {
                                             }
                                         }
                                     });
+                                    
+                                    this.updateSetEntriesCallStatus(true, [client_self.id, message.to]);
 
                                     // getting answer from client means he accepted call!
                                     this.updatePeersWithInCallPeers(message.session_id);
@@ -353,11 +384,12 @@ export default class CallHandler {
     }
 
     _send = (client, message) => {
+        log.debug("send: " + message.toString() + "\n");
         zlib.deflate(encode(message), zlib.Z_BEST_COMPRESSION, (err, buffer) => {
             if (!err) {
                 client.send(buffer);
             } else {
-                log.debug("Send failure !: " + err);
+                log.error("Send failure !: " + err);
             }
           }
         );
@@ -367,9 +399,11 @@ export default class CallHandler {
 let callHandler = new CallHandler();
 callHandler.init();
 
+// DEBUG API //
+
 //debug route
 app.get('/debug', function(req, res) {
-    var response = {
+    let response = {
         "NocP": callHandler.getPeerNo(),
         "Uptime": callHandler.getUptime(),
         "Peers": callHandler.getPeers()
@@ -378,5 +412,5 @@ app.get('/debug', function(req, res) {
     res.send(JSON.stringify(response));
 });
 
-app.listen(4444, function() { log.debug("started debug api") });
+app.listen(4444, "localhost", () => log.debug("listening on debug port"));
 
