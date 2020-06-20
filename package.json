@@ -31,7 +31,13 @@
     "loglevel": "^1.6.4",
     "moment": "^2.24.0",
     "what-the-pack": "^2.0.3",
-    "ws": "^5.2.1"
+    "ws": "^5.2.1",
+    "@babel/core": "^7.10.3",
+    "@babel/register": "^7.10.3",
+    "@babel/plugin-transform-runtime": "^7.10.3",
+    "@babel/plugin-proposal-class-properties": "^7.10.1",
+    "@babel/preset-env": "^7.10.3",
+    "@babel/preset-react": "^7.10.1"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.3"
