@@ -2,11 +2,12 @@
   "name": "webrtc-signaling-server",
   "version": "1.1.0",
   "description": "simple signaling server; now with msgpack",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "start": "npm-run-all --parallel run-server",
+    "start": "ts-node ./src/index.ts",
+    "dev": "DEVELOP=true ts-node ./src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "run-server": "node server/index.js"
+    "run-server": "node server/index.ts"
   },
   "repository": {
     "type": "git",
@@ -27,17 +28,22 @@
   },
   "homepage": "https://github.com/MedicDat/webrtc-signaling-server/#readme",
   "dependencies": {
+    "@babel/core": "^7.10.3",
+    "@babel/plugin-proposal-class-properties": "^7.10.1",
+    "@babel/plugin-transform-runtime": "^7.10.3",
+    "@babel/preset-env": "^7.10.3",
+    "@babel/preset-react": "^7.10.1",
+    "@babel/register": "^7.10.3",
+    "@types/express": "^4.17.6",
+    "@types/node": "^14.0.14",
+    "@types/ws": "^7.2.5",
     "express": "^4.11.2",
     "loglevel": "^1.6.4",
     "moment": "^2.24.0",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5",
     "what-the-pack": "^2.0.3",
-    "ws": "^5.2.1",
-    "@babel/core": "^7.10.3",
-    "@babel/register": "^7.10.3",
-    "@babel/plugin-transform-runtime": "^7.10.3",
-    "@babel/plugin-proposal-class-properties": "^7.10.1",
-    "@babel/preset-env": "^7.10.3",
-    "@babel/preset-react": "^7.10.1"
+    "ws": "^5.2.1"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.3"
