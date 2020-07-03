@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo docker build --tag custom_webrtc-server:latest .
+sudo docker build --tag webrtc-signaling-server:1.0.0 .
