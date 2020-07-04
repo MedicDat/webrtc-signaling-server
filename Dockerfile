@@ -3,5 +3,6 @@ COPY . /app/webrtc-signaling-server
 
 WORKDIR /app/webrtc-signaling-server
 
-CMD [ "npm", "i" ]
+RUN [ "npm", "i" ]
+RUN [ "npm", "audit", "fix", "--force" ]
 CMD [ "npm", "start" ]

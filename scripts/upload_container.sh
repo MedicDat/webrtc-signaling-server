@@ -1,0 +1,2 @@
+sudo docker tag ${1} docker.pkg.github.com/medicdat/webrtc-signaling-server/webrtc-signaling-server:${2}
+sudo docker push docker.pkg.github.com/medicdat/webrtc-signaling-server/webrtc-signaling-server:${2}
