@@ -383,5 +383,5 @@ app.get('/debug', function(req, res) {
     res.send(JSON.stringify(response));
 });
 
-app.listen(4444, "localhost", () => log.debug("listening on debug port"));
+app.listen(4444, "0.0.0.0", () => log.debug("listening on debug port"));
 
