@@ -48,9 +48,12 @@ export default class CallHandler {
         log.debug("updating peers...");
         this.peer_no = 0;
 
-        this.clients.forEach(function (client) {
-            let peer = {};
-            Object.assign(peer, client);
+        this.clients.forEach(function (client: any) {
+            let peer: any = {
+                id: client.id,
+                name: client.name,
+                in_call: client.in_call
+            };
             peers.push(peer);
         });
         
@@ -74,8 +77,11 @@ export default class CallHandler {
         this.clients.forEach(function (client: any) {
             // only update clients in call
             if (client.session_id == session_id) {
-                let peer = {};
-                Object.assign(peer, client);
+                let peer: any = {
+                    id: client.id,
+                    name: client.name,
+                    in_call: client.in_call
+                };
                 peers.push(peer);
             }
         });
@@ -126,8 +132,11 @@ export default class CallHandler {
     getPeers = () => {
         let peers: any = [];
         this.clients.forEach(function (client : any) {
-            let peer: any = {};
-            Object.assign(peer, client);
+            let peer: any = {
+                id: client.id,
+                name: client.name,
+                in_call: client.in_call
+            };
             peers.push(peer.name);
         });
         return peers.join();
@@ -355,7 +364,7 @@ export default class CallHandler {
     }
 
     _send = (client: any, message: any) => {
-        log.debug("send: " + message.toString() + "\n");
+        log.debug("send: " + message.toString() + "\n"); 
         zlib.deflate(encode(message), {level: zlib.Z_BEST_COMPRESSION}, (err, buffer) => {
             if (!err) {
                 client.send(buffer);
