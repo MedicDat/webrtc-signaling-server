@@ -14,7 +14,7 @@ log.setLevel(process.env.DEVELOP ? log.levels.DEBUG : log.levels.ERROR);
 
 app.use(express.static(path.join(process.cwd(),"dist")));
 getJWTInfos().then((infos) => {
-    app.use(jwt({secret: infos.jwtSecret, issuer: infos.jwtIssuer}).unless({path: ["/debug"]}));
+    app.use(jwt({secret: infos.jwtSecret, issuer: infos.jwtIssuer, algorithms: ["SHA256"]}).unless({path: ["/debug"]}));
 });
 
 let toHHMMSS = function (secs: number) {
@@ -383,7 +383,6 @@ export default class CallHandler {
 
 let callHandler = new CallHandler();
 callHandler.init();
-getJWTInfos().then((res) => console.log(res));
 
 // DEBUG API //
 
