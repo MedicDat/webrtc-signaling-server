@@ -14,8 +14,11 @@ client.on("error", function(error) {
 client.auth(sha512.sha512(fs.readFileSync("/etc/redis/redis_pass").toString()));
 
 export default async function getJWTInfos() {
+  const issuer = await getAsync("JWT_ISSUER");
+  const secret = await getAsync("JWT_SECRET");
+  if (secret == null || issuer == null) throw "issuer or secret not set in redis db!";
   return {
-    jwtIssuer: await getAsync("JWT_ISSUER"),
-    jwtSecret: await getAsync("JWT_SECRET")
+    jwtIssuer: issuer,
+    jwtSecret: secret
   };
 }
