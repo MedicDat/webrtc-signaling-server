@@ -8,9 +8,14 @@ import MessagePack from 'what-the-pack';
 const {encode, decode} = MessagePack.initialize(2**22);
 import moment from 'moment';
 import log from 'loglevel';
+import jwt from "express-jwt";
+import getJWTInfos from "./config/redis";
 log.setLevel(process.env.DEVELOP ? log.levels.DEBUG : log.levels.ERROR);
 
 app.use(express.static(path.join(process.cwd(),"dist")));
+getJWTInfos().then((infos) => {
+    app.use(jwt({secret: infos.jwtSecret, issuer: infos.jwtIssuer, algorithms: ["SHA256"]}).unless({path: ["/debug"]}));
+});
 
 let toHHMMSS = function (secs: number) {
     let hours: number   = Math.floor(secs / 3600);
