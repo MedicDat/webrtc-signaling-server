@@ -1,6 +1,7 @@
 FROM node
 COPY . /app/webrtc-signaling-server
-RUN cp /etc/redis/redis_pass /etc/redis/redis_pass
+RUN mkdir /etc/redis
+COPY redis_pass /etc/redis
 WORKDIR /app/webrtc-signaling-server
 
 RUN [ "npm", "i" ]
