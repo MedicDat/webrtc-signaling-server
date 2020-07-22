@@ -8,6 +8,7 @@ import MessagePack from 'what-the-pack';
 const {encode, decode} = MessagePack.initialize(2**22);
 import moment from 'moment';
 import log from 'loglevel';
+import getJWTInfos from "./config/redis";
 log.setLevel(process.env.DEVELOP ? log.levels.DEBUG : log.levels.ERROR);
 
 app.use(express.static(path.join(process.cwd(),"dist")));
@@ -378,6 +379,7 @@ export default class CallHandler {
 
 let callHandler = new CallHandler();
 callHandler.init();
+getJWTInfos().then((res) => console.log(res));
 
 // DEBUG API //
 
