@@ -4,21 +4,31 @@ import fs from "fs";
 import sha512 from "js-sha512";
 import { promisify } from "util";
 
-const client = redis.createClient();
-const getAsync = promisify(client.get).bind(client);
- 
-client.on("error", function(error) {
-  log.error(error);
-});
+export default class RedisConn {
+  client = redis.createClient();
+  getAsync = promisify(this.client.get).bind(this.client);
 
-client.auth(sha512.sha512(fs.readFileSync("/etc/redis/redis_pass").toString()));
+  constructor() {
+    this.client.on("error", function (error) {
+      log.error(error);
+    });
 
-export default async function getJWTInfos() {
-  const issuer = await getAsync("JWT_ISSUER");
-  const secret = await getAsync("JWT_SECRET");
-  if (secret == null || issuer == null) throw "issuer or secret not set in redis db!";
-  return {
-    jwtIssuer: issuer,
-    jwtSecret: secret
-  };
+    this.client.auth(sha512.sha512(fs.readFileSync("/etc/redis/redis_pass").toString()));
+  }
+
+  async getJWTInfos() {
+    const issuer = await this.getAsync("JWT_ISSUER");
+    const secret = await this.getAsync("JWT_SECRET");
+    if (secret == null || issuer == null) throw "issuer or secret not set in redis db!";
+    return {
+      jwtIssuer: issuer,
+      jwtSecret: secret
+    };
+  }
+
+  async get(key: string) {
+    const res = await this.getAsync(key);
+    if (res == null) throw `key ${key} is not set!`;
+    return res;
+  }
 }

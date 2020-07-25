@@ -8,13 +8,16 @@ import MessagePack from 'what-the-pack';
 const {encode, decode} = MessagePack.initialize(2**22);
 import moment from 'moment';
 import log from 'loglevel';
-import jwt from "express-jwt";
-import getJWTInfos from "./config/redis";
+import jwtE from "express-jwt";
+import jwt from "jsonwebtoken";
+import RedisConn from "./config/redis";
 log.setLevel(process.env.DEVELOP ? log.levels.DEBUG : log.levels.ERROR);
 
+const redisConn = new RedisConn();
+
 app.use(express.static(path.join(process.cwd(),"dist")));
-getJWTInfos().then((infos) => {
-    app.use(jwt({secret: infos.jwtSecret, issuer: infos.jwtIssuer, algorithms: ["SHA256"]}).unless({path: ["/debug"]}));
+redisConn.getJWTInfos().then((infos) => {
+    app.use(jwtE({secret: infos.jwtSecret, issuer: infos.jwtIssuer, algorithms: ["SHA256"]}).unless({path: ["/debug"]}));
 });
 
 let toHHMMSS = function (secs: number) {
@@ -43,7 +46,23 @@ export default class CallHandler {
             log.debug("Start WSS Server: bind => wss://0.0.0.0:"+wss_server_port);
         });
 
-        this.wss = new ws.Server({ server: this.ssl_server });
+        this.wss = new ws.Server({
+            server: this.ssl_server,
+            verifyClient: async (info, cb) => {
+                const token = info.req.headers.token;
+                if (!token) {
+                    cb(false, 401, "Unauthorized");
+                } else {
+                    jwt.verify(token as string, await redisConn.get("CLIENT_SECRET"), (err, decoded) => {
+                        if (err) {
+                            cb(false, 401, 'Unauthorized');
+                        } else {
+                            cb(true);
+                        }
+                    });
+                }
+            }
+        });
         this.wss.on('connection', this.onConnection);
 
     }
@@ -147,7 +166,7 @@ export default class CallHandler {
         return peers.join();
     }
 
-    onClose = (client_self: any, data: any) => {
+    onClose = (client_self: any) => {
         log.debug('close');
         let session_id = client_self.session_id;
         //remove old session_id
@@ -183,7 +202,7 @@ export default class CallHandler {
 
         client_self.on("close", (data: any) => {
             this.clients.delete(client_self);
-            this.onClose(client_self, data)
+            this.onClose(client_self);
         });
 
         client_self.on("message", (message: any) => {
