@@ -4,7 +4,7 @@
   "description": "simple signaling server; now with msgpack",
   "main": "index.ts",
   "scripts": {
-    "start": "ts-node --nouse-idle-notification--expose-gc--max-new-space-size=2048--max-old-space-size=8192 ./src/index.ts",
+    "start": "ts-node ./src/index.ts",
     "dev": "DEVELOP=true ts-node ./src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "run-server": "node server/index.ts"
