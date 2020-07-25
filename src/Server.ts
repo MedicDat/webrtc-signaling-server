@@ -49,11 +49,11 @@ export default class CallHandler {
         this.wss = new ws.Server({
             server: this.ssl_server,
             verifyClient: async (info, cb) => {
-                const token = info.req.headers.token;
+                const token = info.req.headers.authorization?.replace("Bearer ", "");
                 if (!token) {
                     cb(false, 401, "Unauthorized");
                 } else {
-                    jwt.verify(token as string, await redisConn.get("CLIENT_SECRET"), (err, decoded) => {
+                    jwt.verify(token as string, await redisConn.get("JWT_SECRET"), (err, decoded) => {
                         if (err) {
                             cb(false, 401, 'Unauthorized');
                         } else {
