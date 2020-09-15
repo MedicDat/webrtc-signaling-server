@@ -188,7 +188,7 @@ export default class CallHandler {
 
         let _send = this._send;
 
-        this.clients.add(new Client(client_self));
+        this.clients.add(client_self);
 
         client_self.on("close", (data: any) => {
             this.clients.delete(client_self);
