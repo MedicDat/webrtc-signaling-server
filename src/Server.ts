@@ -155,7 +155,8 @@ export default class CallHandler {
     }
 
     get peers() {
-        return Array.from(this.clients.values()).join();
+        return Array.from(this.clients.values())
+            .map((client: Client) => client.user_id).join();
     }
 
     onClose = (client_self: any) => {
