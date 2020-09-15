@@ -75,7 +75,7 @@ export default class CallHandler {
         this.clients.forEach((client: Client) => {
             let peer: any = {
                 id: client.id,
-                name: client.user_id,
+                user_id: client.user_id,
                 in_call: client.in_call
             };
             peers.push(peer);
@@ -106,7 +106,7 @@ export default class CallHandler {
             if (client.session_id == session_id) {
                 let peer: any = {
                     id: client.id,
-                    name: client.user_id,
+                    user_id: client.user_id,
                     in_call: client.in_call
                 };
                 peers.push(peer);
@@ -168,7 +168,7 @@ export default class CallHandler {
                 .filter((session: Session) => session.id === session_id);
         }
 
-        redisConn.client.srem("LOGGED_IN_PEERS", client_self.name);
+        redisConn.client.srem("LOGGED_IN_PEERS", client_self.user_id);
 
         let msg = {
             type: "leave",
@@ -200,7 +200,7 @@ export default class CallHandler {
                 if (!err) {
                     message = decode(buffer);
                     // log.debug("message.type:: " + message.type + ", \nbodyBytes: " + encode(message) + "\n");
-                    // log.debug(message.name + "\n");
+                    // log.debug(message.user_id + "\n");
                     log.debug(message.toString() + "\n");
 
                     let msg: any;
@@ -208,7 +208,7 @@ export default class CallHandler {
                     switch (message.type) {
                         case 'new':
                             client_self.id = "" + message.id;
-                            client_self.name = message.name;
+                            client_self.user_id = message.user_id;
                             client_self.in_call = message.in_call;
                             this.updatePeers();
                             break;
