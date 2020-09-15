@@ -1,6 +1,6 @@
 export default class Client {
     id = "";
-    name = "";
+    user_id = "";
     in_call = false;
     session_id = "";
 }

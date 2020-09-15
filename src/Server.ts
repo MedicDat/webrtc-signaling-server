@@ -75,14 +75,16 @@ export default class CallHandler {
         this.clients.forEach((client: Client) => {
             let peer: any = {
                 id: client.id,
-                name: client.name,
+                name: client.user_id,
                 in_call: client.in_call
             };
             peers.push(peer);
         });
 
-        redisConn.client.sadd("logged_in_peers",
-            Array.from(this.clients.values()).map((client: Client) => client.id));
+        if (this.clients.size !== 0) {
+            redisConn.client.sadd("LOGGED_IN_PEERS",
+                Array.from(this.clients.values()).map((client: Client) => client.user_id));
+        }
 
         let msg = {
             type: "peers",
@@ -104,7 +106,7 @@ export default class CallHandler {
             if (client.session_id == session_id) {
                 let peer: any = {
                     id: client.id,
-                    name: client.name,
+                    name: client.user_id,
                     in_call: client.in_call
                 };
                 peers.push(peer);
@@ -156,7 +158,7 @@ export default class CallHandler {
         return Array.from(this.clients.values()).join();
     }
 
-    onClose = (client_self: Client) => {
+    onClose = (client_self: any) => {
         log.debug('close');
         let session_id = client_self.session_id;
 
@@ -166,7 +168,7 @@ export default class CallHandler {
                 .filter((session: Session) => session.id === session_id);
         }
 
-        redisConn.client.srem("logged_in_peers", client_self.id);
+        redisConn.client.srem("LOGGED_IN_PEERS", client_self.name);
 
         let msg = {
             type: "leave",
