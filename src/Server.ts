@@ -370,21 +370,22 @@ export default class CallHandler {
     forcedLogout(channel: string, user_id: string) {
         if (channel !== "force_logout") return; // just in case
         redisConn.client.srem("LOGGED_IN_PEERS", user_id);
-        if (!!this.clients) {
-            const clientsAsArray = Array.from(this.clients.values());
-            this._send(
+        if (!!callHandler.clients) {
+            const clientsAsArray = Array.from(callHandler.clients.values());
+            callHandler._send(
                 clientsAsArray.find((client: Client) => client.user_id == user_id),
                 {type: "force_logout"}
             );
-            this.clients = new Set(
+            callHandler.clients = new Set(
                 clientsAsArray
                     .filter((client: Client) => client.user_id != user_id)
             );
-            this.updatePeers();
+            callHandler.updatePeers();
         }
     }
 
     _send(client: any, message: any) {
+        if (!!!client) return;
         log.debug(`send: ${Object.values(message)}\n`);
         zlib.deflate(encode(message), { level: zlib.Z_BEST_COMPRESSION }, (err, buffer) => {
             if (!err) {
