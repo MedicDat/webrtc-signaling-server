@@ -4,7 +4,7 @@
   "description": "simple signaling server; now with msgpack",
   "main": "index.ts",
   "scripts": {
-    "start": "ts-node --nouse-idle-notification--expose-gc--max-new-space-size=2048--max-old-space-size=8192 ./src/index.ts",
+    "start": "ts-node ./src/index.ts",
     "dev": "DEVELOP=true ts-node ./src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "run-server": "node server/index.ts"
@@ -37,7 +37,7 @@
     "@types/express": "^4.17.6",
     "@types/express-jwt": "0.0.42",
     "@types/jsonwebtoken": "^8.5.0",
-    "@types/node": "^14.0.14",
+    "@types/node": "^14.10.1",
     "@types/redis": "^2.8.25",
     "@types/ws": "^7.2.5",
     "express": "^4.11.2",
