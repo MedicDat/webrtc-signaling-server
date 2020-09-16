@@ -14,7 +14,9 @@ export default class RedisConn {
       log.error(error);
     });
 
-    this.client.auth(sha512.sha512(fs.readFileSync("/etc/redis/redis_pass").toString()));
+    const pass = sha512.sha512(fs.readFileSync("/etc/redis/redis_pass").toString());
+    this.client.auth(pass);
+    this.subscriber.auth(pass);
   }
 
   async getJWTInfos() {

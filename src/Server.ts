@@ -395,6 +395,7 @@ callHandler.init();
 // subscribe to force logout
 redisConn.subscriber.on("message", callHandler.forcedLogout);
 redisConn.subscriber.subscribe("force_logout");
+redisConn.subscriber.on("disconnect", () => redisConn.subscriber.quit());
 
 // DEBUG API //
 
