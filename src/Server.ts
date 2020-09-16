@@ -385,7 +385,7 @@ export default class CallHandler {
     }
 
     _send(client: any, message: any) {
-        log.debug(`send: ${message}\n`);
+        log.debug(`send: ${Object.values(message)}\n`);
         zlib.deflate(encode(message), { level: zlib.Z_BEST_COMPRESSION }, (err, buffer) => {
             if (!err) {
                 client.send(buffer);
