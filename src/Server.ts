@@ -367,7 +367,16 @@ export default class CallHandler {
         });
     }
 
-    _send = (client: any, message: any) => {
+    forcedLogout(channel: string, user_id: string) {
+        if (channel !== "force_logout") return; // just in case
+        redisConn.client.srem("LOGGED_IN_PEERS", user_id);
+        this.clients = new Set(
+            Array.from(this.clients.values())
+                .filter((client: Client) => client.user_id != user_id)
+        );
+    }
+
+    _send(client: any, message: any) {
         log.debug(`send: ${message}\n`);
         zlib.deflate(encode(message), { level: zlib.Z_BEST_COMPRESSION }, (err, buffer) => {
             if (!err) {
@@ -382,6 +391,10 @@ export default class CallHandler {
 
 let callHandler = new CallHandler();
 callHandler.init();
+
+// subscribe to force logout
+redisConn.subscriber.on("message", callHandler.forcedLogout);
+redisConn.subscriber.subscribe("force_logout");
 
 // DEBUG API //
 

@@ -6,6 +6,7 @@ import { promisify } from "util";
 
 export default class RedisConn {
   client = redis.createClient();
+  subscriber = redis.createClient();
   getAsync = promisify(this.client.get).bind(this.client);
 
   constructor() {
