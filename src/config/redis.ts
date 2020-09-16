@@ -6,6 +6,7 @@ import { promisify } from "util";
 
 export default class RedisConn {
   client = redis.createClient();
+  subscriber = redis.createClient();
   getAsync = promisify(this.client.get).bind(this.client);
 
   constructor() {
@@ -13,7 +14,9 @@ export default class RedisConn {
       log.error(error);
     });
 
-    this.client.auth(sha512.sha512(fs.readFileSync("/etc/redis/redis_pass").toString()));
+    const pass = sha512.sha512(fs.readFileSync("/etc/redis/redis_pass").toString());
+    this.client.auth(pass);
+    this.subscriber.auth(pass);
   }
 
   async getJWTInfos() {
