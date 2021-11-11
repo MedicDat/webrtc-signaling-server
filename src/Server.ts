@@ -65,6 +65,14 @@ export default class CallHandler {
         });
         this.wss.on('connection', this.onConnection);
 
+        setInterval(() => {
+            let msg = { type: "keepalive" };
+            let _send = this._send;
+            this.clients.forEach((client: any) => {
+                _send(client, msg);
+            });
+        }, 30000);
+
     }
 
     updatePeers = () => {
@@ -279,7 +287,7 @@ export default class CallHandler {
                                                     },
                                                 };
                                                 _send(client, msg);
-                                            } catch (e) {
+                                            } catch (e: any) {
                                                 log.debug("onUserJoin:" + e.message);
                                             }
                                         }
@@ -339,7 +347,7 @@ export default class CallHandler {
                                         if (client.id === "" + message.to && client.session_id === message.session_id) {
                                             try {
                                                 _send(client, msg);
-                                            } catch (e) {
+                                            } catch (e: any) {
                                                 log.debug("onUserJoin:" + e.message);
                                             }
                                         }
@@ -366,7 +374,7 @@ export default class CallHandler {
                                         if (client.id === "" + message.to && client.session_id === message.session_id) {
                                             try {
                                                 _send(client, msg);
-                                            } catch (e) {
+                                            } catch (e: any) {
                                                 log.debug("onUserJoin:" + e.message);
                                             }
                                         }
@@ -389,7 +397,7 @@ export default class CallHandler {
 
     _send = (client: any, message: any) => {
         log.debug("send: " + message.toString() + "\n"); 
-        zlib.deflate(encode(message), {level: zlib.Z_BEST_COMPRESSION}, (err, buffer) => {
+        zlib.deflate(encode(message), {level: zlib.constants.Z_BEST_COMPRESSION}, (err, buffer) => {
             if (!err) {
                 client.send(buffer);
             } else {
