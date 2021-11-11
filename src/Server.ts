@@ -274,7 +274,7 @@ export default class CallHandler {
                                             },
                                         };
                                         _send(client, msg);
-                                    } catch (e: any) {
+                                    } catch (e) {
                                         log.error(`error at bye: ${e.message}`);
                                     }
                                 }
@@ -330,7 +330,7 @@ export default class CallHandler {
                                 if (client.id === "" + message.to && client.session_id === message.session_id) {
                                     try {
                                         _send(client, msg);
-                                    } catch (e: any) {
+                                    } catch (e) {
                                         log.error(`error at answer: ${e.message}`);
                                     }
                                 }
@@ -355,7 +355,7 @@ export default class CallHandler {
                                 if (client.id === "" + message.to && client.session_id === message.session_id) {
                                     try {
                                         _send(client, msg);
-                                    } catch (e: any) {
+                                    } catch (e) {
                                         log.error(`error at candidate exchange: ${e.message}`);
                                     }
                                 }
