@@ -240,6 +240,23 @@ export default class CallHandler {
                                 _send(receiver, msg);
                             }
                             break;
+                        case 'callee_online':
+                            let caller: any = null;
+                            this.clients.forEach((client: Client) => {
+                                if (client.id === message.caller) {
+                                    caller = client;
+                                }
+                            });
+                            if (!!caller) {
+                                let msg = {
+                                    type: "callee_online",
+                                    data: {
+                                        callee: message.from
+                                    }
+                                }
+                                _send(caller, msg);
+                            }
+                            break;
                         case 'bye':
                             let session: any = null;
                             this.sessions.forEach((sess: any) => {
@@ -274,7 +291,7 @@ export default class CallHandler {
                                             },
                                         };
                                         _send(client, msg);
-                                    } catch (e) {
+                                    } catch (e: any) {
                                         log.error(`error at bye: ${e.message}`);
                                     }
                                 }
@@ -330,7 +347,7 @@ export default class CallHandler {
                                 if (client.id === "" + message.to && client.session_id === message.session_id) {
                                     try {
                                         _send(client, msg);
-                                    } catch (e) {
+                                    } catch (e: any) {
                                         log.error(`error at answer: ${e.message}`);
                                     }
                                 }
@@ -355,7 +372,7 @@ export default class CallHandler {
                                 if (client.id === "" + message.to && client.session_id === message.session_id) {
                                     try {
                                         _send(client, msg);
-                                    } catch (e) {
+                                    } catch (e: any) {
                                         log.error(`error at candidate exchange: ${e.message}`);
                                     }
                                 }
